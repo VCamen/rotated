@@ -1,6 +1,6 @@
 import torch
 
-from rotated.neck import CustomCSPPAN
+from rotated.nn.custom_pan import CustomCSPPAN
 
 
 def test_custom_csp_pan():
@@ -12,8 +12,8 @@ def test_custom_csp_pan():
     )
 
     test_features = [
-        torch.randn(2, 256, 80, 80),   # P3: stride 8
-        torch.randn(2, 512, 40, 40),   # P4: stride 16
+        torch.randn(2, 256, 80, 80),  # P3: stride 8
+        torch.randn(2, 512, 40, 40),  # P4: stride 16
         torch.randn(2, 1024, 20, 20),  # P5: stride 32
     ]
 

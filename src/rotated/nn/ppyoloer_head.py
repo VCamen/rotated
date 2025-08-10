@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from rotated.boxes.decode import decode_ppyoloe_r_boxes
-from rotated.layers import ConvBNLayer
+from rotated.nn.common import ConvBNLayer
 
 
 class ESEAttn(nn.Module):
@@ -181,9 +181,7 @@ class PPYOLOERHead(nn.Module):
 
         return result
 
-    def _forward_common(
-        self, feats: Sequence[torch.Tensor]
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def _forward_common(self, feats: Sequence[torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Unified forward logic generating only raw predictions.
 
         Processes features through ESE attention and prediction heads,
@@ -259,9 +257,7 @@ class PPYOLOERHead(nn.Module):
         anchor_points, stride_tensor, _ = self._generate_anchors(feats)
 
         cls_scores = torch.sigmoid(cls_logits)
-        decoded_boxes = decode_ppyoloe_r_boxes(
-            anchor_points, reg_dist, raw_angles, stride_tensor, self.angle_proj
-        )
+        decoded_boxes = decode_ppyoloe_r_boxes(anchor_points, reg_dist, raw_angles, stride_tensor, self.angle_proj)
 
         # Compute losses if targets provided
         losses = None

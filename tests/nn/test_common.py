@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from rotated.layers import ConvBNLayer
+from rotated.nn.common import ConvBNLayer
 
 
 def test_conv_bn_layer_basic():

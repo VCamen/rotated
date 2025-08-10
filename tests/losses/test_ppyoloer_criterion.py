@@ -2,7 +2,7 @@ import math
 
 import torch
 
-from rotated.criterion import RotatedDetectionLoss
+from rotated.losses.ppyoloer_criterion import RotatedDetectionLoss
 
 
 def test_criterion_perfect_prediction():

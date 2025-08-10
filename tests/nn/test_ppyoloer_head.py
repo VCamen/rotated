@@ -1,6 +1,6 @@
 import torch
 
-from rotated.head import PPYOLOERHead
+from rotated.nn.ppyoloer_head import PPYOLOERHead
 
 
 def test_ppyoloe_r_head_forward_inference():
@@ -11,11 +11,7 @@ def test_ppyoloe_r_head_forward_inference():
     batch_size = 2
     img_size = 640
 
-    head = PPYOLOERHead(
-        in_channels=in_channels,
-        num_classes=num_classes,
-        fpn_strides=fpn_strides
-    )
+    head = PPYOLOERHead(in_channels=in_channels, num_classes=num_classes, fpn_strides=fpn_strides)
 
     # Create test features
     test_features = [

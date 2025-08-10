@@ -2,24 +2,20 @@
 # Copyright (c) 2024 PaddlePaddle Authors. Apache 2.0 License.
 
 from collections.abc import Sequence
-import copy
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from rotated.layers import ConvBNLayer
-
-
-def _get_clones(module: nn.Module, num_copies: int) -> nn.ModuleList:
-    """Create N identical copies of a module."""
-    return nn.ModuleList([copy.deepcopy(module) for _ in range(num_copies)])
+from rotated.nn.common import ConvBNLayer
 
 
 class BasicBlock(nn.Module):
     """Basic residual block with optional shortcut connection and alpha parameter."""
 
-    def __init__(self, in_channels: int, out_channels: int, act: str = "swish", shortcut: bool = True, use_alpha: bool = False):
+    def __init__(
+        self, in_channels: int, out_channels: int, act: str = "swish", shortcut: bool = True, use_alpha: bool = False
+    ):
         super().__init__()
         self.conv1 = ConvBNLayer(in_channels, out_channels, 3, padding=1, act=act)
         self.conv2 = ConvBNLayer(out_channels, out_channels, 3, padding=1, act=act)
@@ -62,7 +58,15 @@ class SPP(nn.Module):
 class CSPStage(nn.Module):
     """Cross Stage Partial (CSP) stage for efficient feature learning."""
 
-    def __init__(self, in_channels: int, out_channels: int, num_blocks: int, act: str = "swish", spp: bool = False, use_alpha: bool = False):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        num_blocks: int,
+        act: str = "swish",
+        spp: bool = False,
+        use_alpha: bool = False,
+    ):
         super().__init__()
 
         mid_channels = int(out_channels // 2)
@@ -212,7 +216,9 @@ class CustomCSPPAN(nn.Module):
 
         for stage_idx in range(self.stage_num):
             input_channels = in_channels if stage_idx == 0 else out_channels
-            stage_layer = CSPStage(input_channels, out_channels, self.block_num, act=self.act, spp=spp, use_alpha=self.use_alpha)
+            stage_layer = CSPStage(
+                input_channels, out_channels, self.block_num, act=self.act, spp=spp, use_alpha=self.use_alpha
+            )
             stage.add_module(str(stage_idx), stage_layer)
 
         return stage

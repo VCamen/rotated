@@ -9,7 +9,7 @@ import torch.nn.functional as F
 
 from rotated.assigners import RotatedTaskAlignedAssigner
 from rotated.boxes.decode import decode_ppyoloe_r_boxes
-from rotated.iou.prob_iou import ProbIoULoss
+from rotated.losses.prob_iou import ProbIoULoss
 
 
 class RotatedDetectionLoss(nn.Module):
@@ -93,9 +93,7 @@ class RotatedDetectionLoss(nn.Module):
 
         # Process raw predictions for assignment
         cls_scores = torch.sigmoid(cls_logits)
-        decoded_boxes = decode_ppyoloe_r_boxes(
-            anchor_points, reg_dist, raw_angles, stride_tensor, angle_proj
-        )
+        decoded_boxes = decode_ppyoloe_r_boxes(anchor_points, reg_dist, raw_angles, stride_tensor, angle_proj)
 
         # Task-aligned assignment using processed outputs
         assigned_labels, assigned_boxes, assigned_scores = self.assigner(

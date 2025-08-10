@@ -19,9 +19,10 @@ except ImportError:
     translate = None
     SHAPELY_AVAILABLE = False
 
-from rotated.iou.approx_iou import RotatedIoUApprox
+from rotated.iou.approx_iou import ApproxRotatedIoU
 from rotated.iou.precise_iou import PreciseRotatedIoU
-from rotated.iou.prob_iou import ProbIoU, ProbIoULoss
+from rotated.iou.prob_iou import ProbIoU
+from rotated.losses.prob_iou import ProbIoULoss
 
 
 class ShapelyIoU:
@@ -102,7 +103,7 @@ if __name__ == "__main__":
 
     # Create calculators
     prob_iou = ProbIoU()
-    approx_iou = RotatedIoUApprox()
+    approx_iou = ApproxRotatedIoU()
     precise_iou = PreciseRotatedIoU()
 
     if SHAPELY_AVAILABLE:
@@ -131,7 +132,6 @@ if __name__ == "__main__":
             [55, 55, 30, 20, math.pi / 4],  # Slightly offset
             [50, 50, 20, 30, 0.0],  # Different rotation
             [50, 50, 15, 15, 0.0],  # Different size
-            [60, 60, 40, 40, math.pi / 6],  # Translated
             [60, 60, 40, 40, math.pi / 6],  # Translated
         ],
         device=device,

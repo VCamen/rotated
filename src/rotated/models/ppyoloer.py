@@ -5,9 +5,9 @@ import torch
 import torch.nn as nn
 
 from rotated.backbones import CSPResNet
-from rotated.criterion import RotatedDetectionLoss
-from rotated.head import PPYOLOERHead
-from rotated.neck import CustomCSPPAN
+from rotated.losses.ppyoloer_criterion import RotatedDetectionLoss
+from rotated.nn.custom_pan import CustomCSPPAN
+from rotated.nn.ppyoloer_head import PPYOLOERHead
 
 
 class PPYOLOER(nn.Module):

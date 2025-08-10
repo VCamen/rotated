@@ -2,10 +2,10 @@ import math
 
 import torch
 
-from rotated.architecture import PPYOLOER, create_ppyoloe_r_model
 from rotated.backbones import CSPResNet
-from rotated.head import PPYOLOERHead
-from rotated.neck import CustomCSPPAN
+from rotated.models.ppyoloer import PPYOLOER, create_ppyoloe_r_model
+from rotated.nn.custom_pan import CustomCSPPAN
+from rotated.nn.ppyoloer_head import PPYOLOERHead
 
 
 def test_ppyoloer_init():
@@ -58,11 +58,14 @@ def test_ppyoloer_forward_training():
     test_images = torch.randn(batch_size, 3, img_size, img_size)
     test_targets = {
         "labels": torch.randint(0, 15, (batch_size, num_targets, 1)),
-        "boxes": torch.cat([
-            torch.rand(batch_size, num_targets, 2) * 400 + 100,  # cx, cy
-            torch.rand(batch_size, num_targets, 2) * 50 + 20,    # w, h
-            torch.rand(batch_size, num_targets, 1) * (math.pi / 2),  # angle
-        ], dim=-1),
+        "boxes": torch.cat(
+            [
+                torch.rand(batch_size, num_targets, 2) * 400 + 100,  # cx, cy
+                torch.rand(batch_size, num_targets, 2) * 50 + 20,  # w, h
+                torch.rand(batch_size, num_targets, 1) * (math.pi / 2),  # angle
+            ],
+            dim=-1,
+        ),
         "valid_mask": torch.ones(batch_size, num_targets, 1),
     }
 
@@ -98,9 +101,9 @@ def test_create_ppyoloe_r_model():
     # Test default configuration
     model = create_ppyoloe_r_model()
     assert isinstance(model, PPYOLOER)
-    assert hasattr(model, 'backbone')
-    assert hasattr(model, 'neck')
-    assert hasattr(model, 'head')
+    assert hasattr(model, "backbone")
+    assert hasattr(model, "neck")
+    assert hasattr(model, "head")
 
     # Test custom num_classes
     model_custom = create_ppyoloe_r_model(num_classes=20)

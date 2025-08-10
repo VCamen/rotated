@@ -5,7 +5,7 @@ Uses adaptive and stratified sampling to improve accuracy over uniform random sa
 import torch
 
 
-class RotatedIoUApprox:
+class ApproxRotatedIoU:
     """Rotated IoU approximation with sampling strategy.
 
     Args:
