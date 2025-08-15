@@ -131,33 +131,38 @@ class RotatedDetectionLoss(nn.Module):
             target_labels: [B, N] - Assigned class labels
 
         Returns:
-            Scalar classification loss normalized by number of positive samples
+            Scalar classification loss normalized by sum of assigned scores
         """
-        num_positives = torch.clamp(target_scores.sum(), min=1.0)
+        # Normalize by sum of assigned scores (quality-aware normalization)
+        assigned_scores_sum = torch.clamp(target_scores.sum(), min=1.0)
+        pred_sigmoid = torch.sigmoid(pred_logits)
 
         if self.use_varifocal:
             # Varifocal loss
+            # Create one-hot label from assigned_labels
             target_labels_onehot = F.one_hot(target_labels, self.num_classes + 1)[..., :-1].float()
-            pred_sigmoid = torch.sigmoid(pred_logits)
 
-            focal_weight = target_scores * target_labels_onehot + (
-                self.focal_alpha * pred_sigmoid.pow(self.focal_gamma) * (1 - target_labels_onehot)
+            # Varifocal loss weighting: alpha * p^gamma * (1-q) + t * q
+            # where p=pred_sigmoid, q=target_labels_onehot, t=target_scores
+            focal_weight = (
+                self.focal_alpha * pred_sigmoid.pow(self.focal_gamma) * (1.0 - target_labels_onehot)
+                + target_scores * target_labels_onehot
             )
 
-            loss = F.binary_cross_entropy_with_logits(
-                pred_logits, target_scores, weight=focal_weight.detach(), reduction="sum"
-            )
+            # Compute BCE loss first, then apply weighting
+            base_loss = F.binary_cross_entropy_with_logits(pred_logits, target_scores, reduction="none")
+            loss = (base_loss * focal_weight).sum()
         else:
-            # Standard focal loss
-            pred_sigmoid = torch.sigmoid(pred_logits)
-            weight = (pred_sigmoid - target_scores).abs().pow(self.focal_gamma)
+            # Standard focal loss - compute BCE first, then apply focal weighting
+            base_loss = F.binary_cross_entropy_with_logits(pred_logits, target_scores, reduction="none")
+            focal_weight = (pred_sigmoid - target_scores).pow(self.focal_gamma)
             if self.focal_alpha > 0:
                 alpha_weight = self.focal_alpha * target_scores + (1 - self.focal_alpha) * (1 - target_scores)
-                weight = weight * alpha_weight
+                focal_weight = focal_weight * alpha_weight
 
-            loss = F.binary_cross_entropy_with_logits(pred_logits, target_scores, weight=weight, reduction="sum")
+            loss = (base_loss * focal_weight).sum()
 
-        return loss / num_positives
+        return loss / assigned_scores_sum
 
     def _box_loss(
         self,
