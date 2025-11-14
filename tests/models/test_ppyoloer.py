@@ -1,10 +1,12 @@
 import math
+import warnings
 
 import pytest
 import torch
 import torch.nn as nn
 
 from rotated.backbones import CSPResNet
+from rotated.losses.ppyoloer_criterion import LossComponents
 from rotated.models.ppyoloer import PPYOLOER, create_ppyoloer_model
 from rotated.nn.custom_pan import CustomCSPPAN
 from rotated.nn.ppyoloer_head import PPYOLOERHead
@@ -37,7 +39,7 @@ def test_ppyoloer_forward_inference():
         losses, decoded_boxes, scores, labels = model(test_images)
 
     # Verify inference outputs
-    assert losses is None
+    torch.testing.assert_close(losses.total, torch.tensor(0.0))
     assert decoded_boxes.shape[0] == batch_size
     assert decoded_boxes.shape[2] == 5  # [cx, cy, w, h, angle]
     assert scores.shape[0] == batch_size
@@ -75,19 +77,21 @@ def test_ppyoloer_forward_training():
 
     # Verify training outputs
     assert losses is not None
-    assert isinstance(losses, dict)
-    assert "total" in losses
-    assert "cls" in losses
-    assert "box" in losses
-    assert "angle" in losses
+    assert isinstance(losses, LossComponents)
 
-    # Verify loss values
-    for loss_name, loss_value in losses.items():
-        assert torch.isfinite(loss_value), f"{loss_name} loss is not finite"
-        assert loss_value >= 0, f"{loss_name} loss is negative"
+    # Verify loss components are valid
+    assert torch.isfinite(losses.total), "Total loss is not finite"
+    assert torch.isfinite(losses.cls), "Classification loss is not finite"
+    assert torch.isfinite(losses.box), "Box loss is not finite"
+    assert torch.isfinite(losses.angle), "Angle loss is not finite"
+
+    assert losses.total >= 0, "Total loss is negative"
+    assert losses.cls >= 0, "Classification loss is negative"
+    assert losses.box >= 0, "Box loss is negative"
+    assert losses.angle >= 0, "Angle loss is negative"
 
     # Test backward pass
-    losses["total"].backward()
+    losses.total.backward()
 
     # Verify some gradients exist
     has_gradients = False
@@ -191,7 +195,7 @@ def test_export_with_backbone_no_export():
     # Test forward still works
     x = torch.randn(1, 3, 640, 640)
     losses, _, scores, _ = model(x)
-    assert losses is None
+    torch.testing.assert_close(losses.total, torch.tensor(0.0))
     assert scores.shape[0] == 1
 
 
@@ -252,3 +256,41 @@ def test_ppyoloer_export_requires_eval():
 
     with pytest.raises(RuntimeError, match="Model must be in eval mode before export."):
         model.export()
+
+
+def test_torchscript_tracing():
+    """Test TorchScript tracing with varying batch sizes."""
+    # Suppress specific TracerWarnings about:
+    # 1. Data flow from anchors generation with fixed image size
+    # 2. Constant losses during inference
+    warnings.filterwarnings("ignore", category=torch.jit.TracerWarning)
+
+    model = create_ppyoloer_model(num_classes=15)
+    model.eval()
+    model.export()
+
+    # Trace with batch_size=1
+    dummy_input = torch.randn(1, 3, 640, 640)
+    traced_model = torch.jit.trace(model, dummy_input)
+
+    # Test with different batch sizes
+    for batch_size in [1, 2, 4]:
+        test_input = torch.randn(batch_size, 3, 640, 640)
+
+        with torch.no_grad():
+            # Original model
+            _, boxes_orig, scores_orig, labels_orig = model(test_input)
+            # Traced model
+            _, boxes_trace, scores_trace, labels_trace = traced_model(test_input)
+
+        # Verify outputs match
+        assert torch.allclose(boxes_orig, boxes_trace, atol=1e-4), f"Boxes mismatch for batch_size={batch_size}"
+        assert torch.allclose(scores_orig, scores_trace, atol=1e-4), f"Scores mismatch for batch_size={batch_size}"
+        assert torch.equal(labels_orig, labels_trace), f"Labels mismatch for batch_size={batch_size}"
+
+        # Verify shapes
+        assert boxes_orig.shape[0] == batch_size
+        assert scores_orig.shape[0] == batch_size
+        assert labels_orig.shape[0] == batch_size
+
+    warnings.resetwarnings()
