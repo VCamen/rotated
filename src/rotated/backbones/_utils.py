@@ -49,7 +49,13 @@ def _load_pretrained_weights(
     Path(cache_dir).mkdir(parents=True, exist_ok=True)
 
     # Download or load from cache
-    state_dict = torch.hub.load_state_dict_from_url(url, model_dir=cache_dir, progress=progress, map_location="cpu")
+    state_dict = torch.hub.load_state_dict_from_url(
+        url,
+        model_dir=cache_dir,
+        progress=progress,
+        map_location="cpu",
+        weights_only=True,
+    )
 
     return state_dict
 
