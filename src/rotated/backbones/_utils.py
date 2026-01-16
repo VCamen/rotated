@@ -78,6 +78,9 @@ def create_csp_resnet(
     Returns:
         CSPResNet model initialized on CPU
 
+    Raises:
+        ValueError: If variant is not supported or pretrained weights are unavailable
+
     Example:
         >>> from rotated.backbones import create_csp_resnet
         >>>
