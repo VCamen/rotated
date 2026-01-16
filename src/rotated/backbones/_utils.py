@@ -71,7 +71,7 @@ def create_csp_resnet(
         pretrained: If True, loads pretrained weights from GitHub releases
         return_levels: Feature pyramid levels to return. Defaults to [1, 2, 3]
                        which corresponds to strides [8, 16, 32] (P3, P4, P5)
-        in_chans: Number of input channels. Defaults to 3 (RGB)
+        in_chans: Number of input channels
         cache_dir: Directory to cache downloaded weights.
                    Defaults to ~/.cache/torch/hub/checkpoints/
 
